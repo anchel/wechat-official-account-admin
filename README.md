@@ -49,6 +49,42 @@
 
 2. 基于源码手动构建
 
-   a 克隆项目到本地 git clone --recurse-submodules https://github.com/anchel/wechat-official-account-admin.git 此时子项目也会跟着克隆
+   a 必备工具 git、golang(1.22 以上)、nodejs（20 以上）
 
-   b
+   b 克隆项目到本地 `git clone --recurse-submodules https://github.com/anchel/wechat-official-account-admin.git` 此时子项目也会跟着克隆
+
+   c 在项目主目录下，执行 `make fe` 来安装前端的依赖并构建前端产物
+
+   d 执行 `make all` 来构建多平台的目标，执行完成后，会在 build 目录下生成多个平台的可执行文件，根据情况选择合适的。
+
+   e 后续步骤，参考上面第一种方式
+
+## 使用
+
+服务启动之后，默认监听在 9305 端口，假设 ip 是 192.168.0.100
+
+打开浏览器输入地址：http://192.168.0.100:9305
+
+服务首次启动的时候，会自动创建超管用户 admin ，密码是：admin1987 ，可用超管用户登录进去创建其他用户，另外一定要尽快修改超管密码
+
+登录进去之后，默认是没有任何公众号的，需要先添加公众号，步骤如下：
+
+1. 去微信公众号官方后台 https://mp.weixin.qq.com/，获取AppID、AppSecret、Token、EncodingAESKey
+2. 在该系统的公众号管理页面，添加公众号
+
+   ![1731309451354](image/README/1731309451354.png)
+
+3. 添加完成之后，查看详情界面可以看到配置地址，这个地址需要配置在微信公众号官方后台。
+
+   ![1731309337778](image/README/1731309337778.png)
+
+   另外，微信官方会对请求来源 ip 做限制。需要把页面上显示的公网 ip，配置在微信官方的 ip 白名单里面
+
+4. 配置完成后，即可管理公众号了。
+
+## 问题排查
+
+1. 某些接口提示没有权限
+   公众号分订阅号，服务号，另外还区分是否已认证，不同类型公众号获取的接口权限列表是不一样的，详情请查看 [接口权限说明](https://developers.weixin.qq.com/doc/offiaccount/Getting_Started/Explanation_of_interface_privileges.html)
+2. 请求方的 ip 不在白名单
+   需要去微信公众号官方后台，把你服务器的外网 ip 加到白名单里面

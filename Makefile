@@ -33,6 +33,9 @@ windows-amd64:
 test:
 	go test -v ./...
 
+fe:
+	cd wechat-official-account-admin-fe && npm install && npm run build
+
 run:
 	go build -o $(BUILD_DIR)/woaa main.go
 	cp .env $(BUILD_DIR)/.env
