@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -151,4 +152,19 @@ func GetExtensionFromUrl(url string) string {
 	ext := filepath.Ext(filename)
 
 	return ext
+}
+
+func MakePublicServeUrl(c *gin.Context, pathname string) string {
+	protocol := c.Request.URL.Scheme
+	if protocol == "" {
+		protocol = c.Request.Header.Get("X-Forwarded-Proto")
+	}
+	if protocol == "" {
+		protocol = "http"
+	}
+	protocol, _ = strings.CutSuffix(protocol, "://")
+	
+	serveHost := os.Getenv("PUBLIC_HOST")
+
+	return fmt.Sprintf("%s://%s%s", protocol, serveHost, pathname)
 }

@@ -3,11 +3,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 
 	"log"
 
 	"github.com/anchel/wechat-official-account-admin/lib/types"
+	"github.com/anchel/wechat-official-account-admin/lib/util"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/anchel/wechat-official-account-admin/routes"
 	appidservice "github.com/anchel/wechat-official-account-admin/services/appid-service"
@@ -24,6 +27,7 @@ func init() {
 		}
 		// 下面是不需要选择了某个公众号就可以调用的
 		r.GET("/system/appid/list", ctl.List)
+		r.GET("/system/appid/get_config_info", ctl.GetConfigInfo)
 		r.POST("/system/appid/select", ctl.Select)
 		r.POST("/system/appid/save", ctl.Save)
 		r.POST("/system/appid/delete", ctl.Delete)
@@ -284,4 +288,28 @@ func (ctl *AppIDController) SetEnabled(c *gin.Context) {
 	}
 
 	ctl.returnOk(c, nil)
+}
+
+// 获取公众号的附加信息
+func (ctl *AppIDController) GetConfigInfo(c *gin.Context) {
+	appid := c.Query("appid")
+	if appid == "" {
+		ctl.returnFail(c, 400, "appid required")
+		return
+	}
+
+	res, err := http.Get("https://ipinfo.io/ip")
+	if err != nil {
+		ctl.returnFail(c, 500, err.Error())
+		return
+	}
+	defer res.Body.Close()
+	bs, err := io.ReadAll(res.Body)
+	if err != nil {
+		ctl.returnFail(c, 500, err.Error())
+		return
+	}
+	
+	pathname := fmt.Sprint("/wxmp/", appid, "/handler")
+	ctl.returnOk(c, gin.H{"ip": string(bs), "configUrl": util.MakePublicServeUrl(c, pathname)})
 }

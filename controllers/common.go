@@ -23,7 +23,6 @@ type CommonController struct {
 
 // 获取当前服务器的公网IP，调用 https://ipinfo.io/json 接口
 func (ctl *CommonController) getPublicIP(c *gin.Context) {
-	// TODO: 从 https://ipinfo.io/json 接口获取公网IP
 	res, err := http.Get("https://ipinfo.io/ip")
 	if err != nil {
 		ctl.returnFail(c, 500, err.Error())

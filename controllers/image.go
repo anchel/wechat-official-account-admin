@@ -5,9 +5,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/anchel/wechat-official-account-admin/lib/util"
 	"github.com/anchel/wechat-official-account-admin/routes"
@@ -69,18 +67,7 @@ func (ctl *ImageController) Upload(c *gin.Context) {
 		return
 	}
 
-	protocol := c.Request.URL.Scheme
-	if protocol == "" {
-		protocol = c.Request.Header.Get("X-Forwarded-Proto")
-	}
-	if protocol == "" {
-		protocol = "http"
-	}
-	protocol, _ = strings.CutSuffix(protocol, "://")
-	
-	serveHost := os.Getenv("PUBLIC_HOST")
-
 	ctl.returnOk(c, gin.H{
-		"imgUrl": fmt.Sprint(protocol, "://", serveHost, filePath),
+		"imgUrl": util.MakePublicServeUrl(c, filePath),
 	})
 }
