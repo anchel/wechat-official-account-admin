@@ -69,7 +69,7 @@
 
 登录进去之后，默认是没有任何公众号的，需要先添加公众号，步骤如下：
 
-1. 去微信公众号官方后台 https://mp.weixin.qq.com/，获取AppID、AppSecret、Token、EncodingAESKey
+1. 去微信公众号官方后台 [官方后台](https://mp.weixin.qq.com/) 获取 AppID、AppSecret、Token、EncodingAESKey
 2. 在该系统的公众号管理页面，添加公众号
 
    ![1731309451354](image/README/1731309451354.png)
