@@ -1,0 +1,3 @@
+[submodule "wechat-official-account-admin-fe"]
+	path = wechat-official-account-admin-fe
+	url = https://github.com/anchel/wechat-official-account-admin-fe.git

@@ -1,0 +1,14 @@
+
+.DS_Store
+
+build
+
+.idea
+
+.vscode
+
+.env
+
+develop.txt
+
+tests
