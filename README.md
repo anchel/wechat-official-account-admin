@@ -88,3 +88,5 @@
    公众号分订阅号，服务号，另外还区分是否已认证，不同类型公众号获取的接口权限列表是不一样的，详情请查看 [接口权限说明](https://developers.weixin.qq.com/doc/offiaccount/Getting_Started/Explanation_of_interface_privileges.html)
 2. 请求方的 ip 不在白名单
    需要去微信公众号官方后台，把你服务器的外网 ip 加到白名单里面
+3. api 频率受限
+   微信对 api 的访问频率有限制，详情见 [每日调用上限](https://mp.weixin.qq.com/cgi-bin/frame?t=pages/developsetting/page/developsetting_frame)

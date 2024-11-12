@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"io"
-	"net/http"
-
 	"github.com/anchel/wechat-official-account-admin/routes"
+	commonservice "github.com/anchel/wechat-official-account-admin/services/common-service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,18 +19,12 @@ type CommonController struct {
 	*BaseController
 }
 
-// 获取当前服务器的公网IP，调用 https://ipinfo.io/json 接口
 func (ctl *CommonController) getPublicIP(c *gin.Context) {
-	res, err := http.Get("https://ipinfo.io/ip")
+	ip, err := commonservice.GetPublicIP()
 	if err != nil {
 		ctl.returnFail(c, 500, err.Error())
 		return
 	}
-	defer res.Body.Close()
-	bs, err := io.ReadAll(res.Body)
-	if err != nil {
-		ctl.returnFail(c, 500, err.Error())
-		return
-	}
-	ctl.returnOk(c, gin.H{"ip": string(bs)})
+
+	ctl.returnOk(c, gin.H{"ip": ip})
 }

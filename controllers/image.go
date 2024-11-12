@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/anchel/wechat-official-account-admin/lib/util"
+	"github.com/anchel/wechat-official-account-admin/lib/utils"
 	"github.com/anchel/wechat-official-account-admin/routes"
 	"github.com/gin-gonic/gin"
 )
@@ -53,7 +53,7 @@ func (ctl *ImageController) Upload(c *gin.Context) {
 		return
 	}
 
-	dstFilePath, filePath, err := util.GetUploadFilePath(filepath.Ext(file.Filename))
+	dstFilePath, filePath, err := utils.GetUploadFilePath(filepath.Ext(file.Filename))
 	if ctl.checkError(c, err) != nil {
 		return
 	}
@@ -68,6 +68,6 @@ func (ctl *ImageController) Upload(c *gin.Context) {
 	}
 
 	ctl.returnOk(c, gin.H{
-		"imgUrl": util.MakePublicServeUrl(c, filePath),
+		"imgUrl": utils.MakePublicServeUrl(c, filePath),
 	})
 }

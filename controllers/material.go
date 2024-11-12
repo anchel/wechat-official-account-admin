@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/anchel/wechat-official-account-admin/lib/util"
+	util "github.com/anchel/wechat-official-account-admin/lib/utils"
 	"github.com/anchel/wechat-official-account-admin/modules/weixin"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/anchel/wechat-official-account-admin/routes"

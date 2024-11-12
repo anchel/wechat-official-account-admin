@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/anchel/wechat-official-account-admin/lib/util"
+	"github.com/anchel/wechat-official-account-admin/lib/utils"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -87,10 +87,10 @@ func (wxapi *WxApi) DownloadMaterial(ctx context.Context, media_type, media_id s
 		retMap["description"] = retobj.Description
 		retMap["download_url"] = retobj.DownloadURL
 		if retMap["extension"] == "" {
-			retMap["extension"] = util.GetExtensionFromUrl(retobj.DownloadURL)
+			retMap["extension"] = utils.GetExtensionFromUrl(retobj.DownloadURL)
 		}
 
-		body, err = util.GetUrlResultBody(retobj.DownloadURL)
+		body, err = utils.GetUrlResultBody(retobj.DownloadURL)
 		if err != nil {
 			return nil, retMap, err
 		}
@@ -183,7 +183,7 @@ func (wxapi *WxApi) DownloadTempMaterial(ctx context.Context, media_id string) (
 	if err != nil { // 如果发生错误，说明不是视频，是其他类型，则直接返回body
 		return body, retMap, nil
 	} else {
-		body, err = util.GetUrlResultBody(retobj.VideoURL)
+		body, err = utils.GetUrlResultBody(retobj.VideoURL)
 		if err != nil {
 			return body, retMap, err
 		}

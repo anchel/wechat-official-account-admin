@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/anchel/wechat-official-account-admin/lib/types"
-	"github.com/anchel/wechat-official-account-admin/lib/util"
+	"github.com/anchel/wechat-official-account-admin/lib/utils"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -53,7 +53,7 @@ func (ctl *BaseController) checkError(c *gin.Context, err error) error {
 
 // 返回文件
 func (ctl *BaseController) returnFile(c *gin.Context, filePath string) {
-	wd, _ := util.GetExePwd()
+	wd, _ := utils.GetExePwd()
 	filePath = filepath.Join(wd, filePath)
 	c.File(filePath)
 }

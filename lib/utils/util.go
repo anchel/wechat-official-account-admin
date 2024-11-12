@@ -1,4 +1,4 @@
-package util
+package utils
 
 import (
 	"crypto/sha1"
@@ -163,7 +163,7 @@ func MakePublicServeUrl(c *gin.Context, pathname string) string {
 		protocol = "http"
 	}
 	protocol, _ = strings.CutSuffix(protocol, "://")
-	
+
 	serveHost := os.Getenv("PUBLIC_HOST")
 
 	return fmt.Sprintf("%s://%s%s", protocol, serveHost, pathname)

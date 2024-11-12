@@ -3,17 +3,16 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
 	"log"
 
 	"github.com/anchel/wechat-official-account-admin/lib/types"
-	"github.com/anchel/wechat-official-account-admin/lib/util"
+	"github.com/anchel/wechat-official-account-admin/lib/utils"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/anchel/wechat-official-account-admin/routes"
 	appidservice "github.com/anchel/wechat-official-account-admin/services/appid-service"
+	commonservice "github.com/anchel/wechat-official-account-admin/services/common-service"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
@@ -61,7 +60,7 @@ func (ctl *AppIDController) List(c *gin.Context) {
 		return
 	}
 
-	log.Println("c.Request.URL", c.Request.URL.Scheme, c.Request.Header.Get("X-Forwarded-Proto"))
+	// log.Println("c.Request.URL", c.Request.URL.Scheme, c.Request.Header.Get("X-Forwarded-Proto"))
 	protocol := c.Request.URL.Scheme
 	if protocol == "" {
 		protocol = c.Request.Header.Get("X-Forwarded-Proto")
@@ -298,18 +297,12 @@ func (ctl *AppIDController) GetConfigInfo(c *gin.Context) {
 		return
 	}
 
-	res, err := http.Get("https://ipinfo.io/ip")
+	ip, err := commonservice.GetPublicIP()
 	if err != nil {
 		ctl.returnFail(c, 500, err.Error())
 		return
 	}
-	defer res.Body.Close()
-	bs, err := io.ReadAll(res.Body)
-	if err != nil {
-		ctl.returnFail(c, 500, err.Error())
-		return
-	}
-	
+
 	pathname := fmt.Sprint("/wxmp/", appid, "/handler")
-	ctl.returnOk(c, gin.H{"ip": string(bs), "configUrl": util.MakePublicServeUrl(c, pathname)})
+	ctl.returnOk(c, gin.H{"ip": ip, "configUrl": utils.MakePublicServeUrl(c, pathname)})
 }
