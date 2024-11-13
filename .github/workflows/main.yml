@@ -113,14 +113,14 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Upload multiple assets
+      - name: Upload Release Assets
+        # You may pin to the exact commit or the version.
+        # uses: alexellis/upload-assets@13926a61cdb2cb35f5fdef1c06b8b591523236d3
+        uses: alexellis/upload-assets@0.4.1
+        with:
+          # The paths to the assets you want to upload as a JSON array. You can use a glob pattern.
+          asset_paths: '["build/**/woaa-*"]'
         env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_ID: ${{ steps.create_release.outputs.id }}
-        run: |
-          for file in build/woaa-*; do
-            echo "Uploading $file..."
-            gh release upload $RELEASE_ID "$file" --clobber
-          done
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
       - run: echo 'Release ID is ${{ steps.create_release.outputs.id }}'
