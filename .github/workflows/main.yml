@@ -84,6 +84,7 @@ jobs:
         with:
           name: dist
 
+      - run: cp build/**/woaa-* .
       - run: ls -alrth
 
       - run: tar -czvf all.tar.gz frontend.tar.gz woaa*
