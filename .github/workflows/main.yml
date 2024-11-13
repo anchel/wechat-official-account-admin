@@ -115,6 +115,7 @@ jobs:
 
       - name: Upload multiple assets
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ steps.create_release.outputs.id }}
         run: |
           for file in build/woaa-*; do
