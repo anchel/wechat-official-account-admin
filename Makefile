@@ -34,7 +34,7 @@ test:
 	go test -v ./...
 
 fe:
-	cd wechat-official-account-admin-fe && npm install && npm run build
+	cd wechat-official-account-admin-fe && npm ci && npm run build
 
 run:
 	go build -o $(BUILD_DIR)/woaa main.go
