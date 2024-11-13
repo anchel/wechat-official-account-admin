@@ -85,11 +85,11 @@ jobs:
           name: dist
 
       - run: tree .
-      - run: cp build/woaa-* .
+
       - run: ls -alrth
 
-      - run: tar -czvf all.tar.gz frontend.tar.gz woaa*
-        shell: bash
+      # - run: tar -czvf all.tar.gz frontend.tar.gz woaa*
+      #   shell: bash
 
       - name: create_release
         id: create_release
@@ -107,8 +107,19 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: "${{ steps.create_release.outputs.upload_url }}"
-          asset_path: all.tar.gz
-          asset_name: all.tar.gz
+          asset_path: frontend.tar.gz
+          asset_name: frontend.tar.gz
           asset_content_type: application/gzip
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Upload multiple assets
+        env:
+          RELEASE_ID: ${{ steps.create_release.outputs.id }}
+        run: |
+          for file in build/woaa-*; do
+            echo "Uploading $file..."
+            gh release upload $RELEASE_ID "$file" --clobber
+          done
+
+      - run: echo 'Release ID is ${{ steps.create_release.outputs.id }}'
