@@ -63,7 +63,7 @@ jobs:
           path: |
             frontend.tar.gz
             commit_info.txt
-            build/woaa*
+            build/**/woaa-*
           retention-days: 1
 
       - name: Output artifact ID
