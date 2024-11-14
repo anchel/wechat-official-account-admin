@@ -2,11 +2,14 @@
 
 ## 背景
 
-微信公众号官方提供了各种 api 用来管理公众号的资源，例如素材管理、用户管理等。同时支持配置「服务器地址」用来接管公众号的消息推送。该项目可实现这些功能。
+微信公众号官方提供了各种 api 用来管理公众号的资源，例如素材管理、用户管理、二维码等。同时支持配置「服务器地址」用来接管公众号的消息推送。该项目可实现这些功能。
 
-体验 demo：[http://wechat.anchel.cn](http://wechat.anchel.cn/)
+体验地址：[http://wechat.anchel.cn](http://wechat.anchel.cn/)
 
 账号密码：guest/guest
+
+效果图：
+![173130945135422](https://wechat.anchel.cn/files/upload-image/upload-6735ef232b22bae98b20cfd7.jpeg)
 
 ## **已实现功能**
 
