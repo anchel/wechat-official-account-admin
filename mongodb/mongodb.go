@@ -157,24 +157,51 @@ func GetCollectionIndexs(ctx context.Context, collection *mongo.Collection) ([]b
 	return results, nil
 }
 
-func CheckCollectionIndexExists(ctx context.Context, indexs []bson.M, fieldName string, checkUnique bool) bool {
-	indexExists := false
+// CheckCollectionIndexExists 检查集合中是否存在指定的索引，单字段索引
+func CheckCollectionIndexExists(indexs []bson.M, fieldName string, checkUnique bool) bool {
 	for _, index := range indexs {
 		if keys, ok := index["key"].(bson.M); ok {
-			if _, exists := keys[fieldName]; exists {
-				if checkUnique {
-					if unique, ok := index["unique"].(bool); ok && unique {
-						indexExists = true
-						break
+			if len(keys) == 1 {
+				if _, exists := keys[fieldName]; exists {
+					if checkUnique {
+						if unique, ok := index["unique"].(bool); ok && unique {
+							return true
+						}
+					} else {
+						return true
 					}
-				} else {
-					indexExists = true
-					break
 				}
 			}
 		}
 	}
-	return indexExists
+	return false
+}
+
+// CheckCollectionCompoundIndexExists 检查集合中是否存在指定的索引，复合索引
+func CheckCollectionCompoundIndexExists(indexs []bson.M, fieldNames []string, checkUnique bool) bool {
+	for _, index := range indexs {
+		if keys, ok := index["key"].(bson.M); ok {
+			if len(keys) == len(fieldNames) {
+				allFieldsExist := true
+				for _, fieldName := range fieldNames {
+					if _, exists := keys[fieldName]; !exists {
+						allFieldsExist = false
+						break
+					}
+				}
+				if allFieldsExist {
+					if checkUnique {
+						if unique, ok := index["unique"].(bool); ok && unique {
+							return true
+						}
+					} else {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
 }
 
 type ModelInitFunc func(*MongoClient) error

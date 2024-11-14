@@ -59,15 +59,16 @@ func init() {
 			log.Println("Error GetCollectionIndexs")
 			return err
 		}
-		if !CheckCollectionIndexExists(context.Background(), usersIndexs, "openid", true) {
+		if !CheckCollectionCompoundIndexExists(usersIndexs, []string{"appid", "openid"}, true) {
 			_, err = collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-				Keys: bson.M{
-					"openid": 1,
+				Keys: bson.D{
+					{Key: "appid", Value: 1},
+					{Key: "openid", Value: 1},
 				},
 				Options: options.Index().SetUnique(true),
 			})
 			if err != nil {
-				log.Println("Error CreateOne")
+				log.Println("Error CreateOne", err)
 				return err
 			}
 		}

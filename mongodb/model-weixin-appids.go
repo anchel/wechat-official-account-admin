@@ -61,7 +61,7 @@ func init() {
 			log.Println("Error GetCollectionIndexs")
 			return err
 		}
-		if !CheckCollectionIndexExists(context.Background(), usersIndexs, "appid", true) {
+		if !CheckCollectionIndexExists(usersIndexs, "appid", true) {
 			_, err = collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys: bson.M{
 					"appid": 1,

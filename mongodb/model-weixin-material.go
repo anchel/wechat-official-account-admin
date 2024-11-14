@@ -1,6 +1,10 @@
 package mongodb
 
 import (
+	"context"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"time"
 
@@ -47,6 +51,28 @@ func init() {
 		ModelWeixinMaterial = NewModelBase[EntityWeixinMaterial, *EntityWeixinMaterial](collectionName)
 
 		// 检查索引是否存在
+		collection, err := mongoClient.GetCollection(collectionName)
+		if err != nil {
+			log.Println("Error mongoClient.GetCollection")
+			return err
+		}
+		usersIndexs, err := GetCollectionIndexs(context.Background(), collection)
+		if err != nil {
+			log.Println("Error GetCollectionIndexs")
+			return err
+		}
+		if !CheckCollectionIndexExists(usersIndexs, "appid", false) {
+			_, err = collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+				Keys: bson.M{
+					"appid": 1,
+				},
+				Options: options.Index().SetUnique(false),
+			})
+			if err != nil {
+				log.Println("Error CreateOne")
+				return err
+			}
+		}
 
 		return nil
 	})

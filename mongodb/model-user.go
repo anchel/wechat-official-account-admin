@@ -54,7 +54,7 @@ func init() {
 			log.Println("Error GetCollectionIndexs")
 			return err
 		}
-		if !CheckCollectionIndexExists(context.Background(), usersIndexs, "username", true) {
+		if !CheckCollectionIndexExists(usersIndexs, "username", true) {
 			_, err = collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys: bson.M{
 					"username": 1,
@@ -66,7 +66,7 @@ func init() {
 				return err
 			}
 		}
-		if !CheckCollectionIndexExists(context.Background(), usersIndexs, "email", true) {
+		if !CheckCollectionIndexExists(usersIndexs, "email", true) {
 			_, err = collection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 				Keys: bson.M{
 					"email": 1,
