@@ -2,11 +2,12 @@ package mongodb
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -42,7 +43,7 @@ var ModelWxQrcode *ModelBase[EntityWxQrcode, *EntityWxQrcode]
 
 func init() {
 	AddModelInitFunc(func(client *MongoClient) error {
-		log.Println("init mongodb model user")
+		log.Println("init mongodb model wx qrcode")
 
 		collectionName := "wx-qrcodes"
 

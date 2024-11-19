@@ -434,7 +434,7 @@ func (ctl *MenuController) saveNormal(c *gin.Context) {
 	buttons := make([]*wxapi.MenuButtonItemApiFormat, 0)
 	for _, button := range form.Button {
 		var subButtons []*wxapi.MenuButtonItemApiFormat
-		if button.SubButton != nil && len(button.SubButton) > 0 {
+		if button != nil && button.SubButton != nil && len(button.SubButton) > 0 {
 			for _, subButton := range button.SubButton {
 				subButtons = append(subButtons, &wxapi.MenuButtonItemApiFormat{
 					Name:     subButton.Name,
@@ -581,7 +581,7 @@ func (ctl *MenuController) saveConditionalMenu(c *gin.Context) {
 	buttons := make([]*wxapi.MenuButtonItemApiFormat, 0)
 	for _, button := range form.Button {
 		var subButtons []*wxapi.MenuButtonItemApiFormat
-		if button.SubButton != nil && len(button.SubButton) > 0 {
+		if button != nil && button.SubButton != nil && len(button.SubButton) > 0 {
 			for _, subButton := range button.SubButton {
 				subButtons = append(subButtons, &wxapi.MenuButtonItemApiFormat{
 					Name:     subButton.Name,
@@ -615,15 +615,17 @@ func (ctl *MenuController) saveConditionalMenu(c *gin.Context) {
 	if form.ID == "" {
 		// 更新每个button的key
 		for _, button := range buttons {
-			newKey := strings.Replace(button.Key, "_new_", fmt.Sprint("_", id, "_"), 1)
-			keyMap[button.Key] = newKey
-			button.Key = newKey
+			if button != nil {
+				newKey := strings.Replace(button.Key, "_new_", fmt.Sprint("_", id, "_"), 1)
+				keyMap[button.Key] = newKey
+				button.Key = newKey
 
-			if button.SubButton != nil && len(button.SubButton) > 0 {
-				for _, subButton := range button.SubButton {
-					newKey := strings.Replace(subButton.Key, "_new_", fmt.Sprint("_", id, "_"), 1)
-					keyMap[subButton.Key] = newKey
-					subButton.Key = newKey
+				if len(button.SubButton) > 0 {
+					for _, subButton := range button.SubButton {
+						newKey := strings.Replace(subButton.Key, "_new_", fmt.Sprint("_", id, "_"), 1)
+						keyMap[subButton.Key] = newKey
+						subButton.Key = newKey
+					}
 				}
 			}
 		}

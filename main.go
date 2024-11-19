@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"encoding/gob"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,18 +12,25 @@ import (
 	"time"
 
 	_ "github.com/anchel/wechat-official-account-admin/controllers" // Import all controllers
+	"github.com/anchel/wechat-official-account-admin/lib/logger"
 	"github.com/anchel/wechat-official-account-admin/lib/types"
+	"github.com/anchel/wechat-official-account-admin/lib/utils"
 	"github.com/anchel/wechat-official-account-admin/modules/weixin"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/anchel/wechat-official-account-admin/routes"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-contrib/static"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+
 	"github.com/joho/godotenv"
 	redislib "github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var rootCmd = &cobra.Command{
@@ -34,7 +40,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := run()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			os.Exit(1)
 		}
 	},
@@ -53,10 +59,13 @@ var frontend embed.FS
 func run() error {
 	log.Println("starting run")
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-		return err
+	if utils.CheckEnvFile() {
+		log.Println("loading .env file")
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("Error loading .env file")
+			return err
+		}
 	}
 
 	log.Println("starting InitMongoDB")
@@ -81,12 +90,54 @@ func run() error {
 	// 优雅退出
 	defer mongoClient.Disconnect(context.Background())
 
-	r := gin.Default()
-	err = r.SetTrustedProxies(nil)
+	r := gin.New()
+	err = r.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
 		log.Println("Error r.SetTrustedProxies")
 		return err
 	}
+	r.Use(gin.Logger())
+
+	zcore := logger.NewMongoZapCore[types.GinRequestLogInfo](zap.DebugLevel, func() (*mongo.Collection, error) {
+		return mongoClient.GetCollection("request-logs")
+	})
+	defer zcore.Sync()
+
+	logger := zap.New(zcore)
+
+	r.Use(ginzap.GinzapWithConfig(logger, &ginzap.Config{
+		TimeFormat:   time.RFC3339,
+		UTC:          true,
+		DefaultLevel: zap.InfoLevel,
+		Skipper: func(c *gin.Context) bool {
+			result := true
+
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") && c.Request.Method != "GET" {
+				result = false
+			}
+			contentType := c.Writer.Header().Get("Content-Type")
+			// log.Println("contentType", contentType)
+			if strings.Contains(contentType, "html") {
+				result = false
+			}
+
+			return result
+		},
+		Context: ginzap.Fn(func(c *gin.Context) []zapcore.Field {
+			fields := []zapcore.Field{}
+			session := sessions.Default(c)
+			appidInfo := session.Get("appid")
+			if appidInfo != nil {
+				app, ok := appidInfo.(types.SessionAppidInfo)
+				if ok {
+					fields = append(fields, zap.String("appid", app.AppID))
+				}
+			}
+			return fields
+		}),
+	}))
+
+	r.Use(ginzap.RecoveryWithZap(logger, true))
 
 	store, err := redis.NewStore(3, "tcp", os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), []byte("secret666"))
 	if err != nil {
@@ -108,11 +159,19 @@ func run() error {
 
 	// enable single page application
 	r.NoRoute(func(c *gin.Context) {
-		fmt.Println("NoRoute", c.Request.URL.Path)
+		log.Println("NoRoute", c.Request.URL.Path)
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.JSON(http.StatusOK, gin.H{
 				"code":    1,
 				"message": "api not found",
+			})
+			return
+		}
+		accept := c.Request.Header.Get("Accept")
+		if !strings.Contains(accept, "html") {
+			c.JSON(http.StatusOK, gin.H{
+				"code":    1,
+				"message": "not html",
 			})
 			return
 		}

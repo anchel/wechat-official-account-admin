@@ -44,7 +44,7 @@ var ModelWxAppid *ModelBase[EntityWxAppid, *EntityWxAppid]
 
 func init() {
 	AddModelInitFunc(func(client *MongoClient) error {
-		log.Println("init mongodb model user")
+		log.Println("init mongodb model wx-appids")
 
 		collectionName := "wx-appids"
 

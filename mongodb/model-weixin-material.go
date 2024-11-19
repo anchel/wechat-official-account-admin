@@ -2,11 +2,12 @@ package mongodb
 
 import (
 	"context"
+	"log"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -44,7 +45,7 @@ var ModelWeixinMaterial *ModelBase[EntityWeixinMaterial, *EntityWeixinMaterial]
 func init() {
 
 	AddModelInitFunc(func(client *MongoClient) error {
-		log.Println("init mongodb model weixin downloadmedias")
+		log.Println("init mongodb model weixin materials")
 
 		collectionName := "wx-materials"
 
