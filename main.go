@@ -98,6 +98,11 @@ func run() error {
 	}
 	r.Use(gin.Logger())
 
+	excludeLogPaths := []string{
+		"/api/system/user/userinfo",
+		"/api/appid/session_info",
+		"/api/request-log/list",
+	}
 	zcore := logger.NewMongoZapCore[types.GinRequestLogInfo](zap.DebugLevel, func() (*mongo.Collection, error) {
 		return mongoClient.GetCollection("request-logs")
 	})
@@ -112,14 +117,17 @@ func run() error {
 		Skipper: func(c *gin.Context) bool {
 			result := true
 
-			if strings.HasPrefix(c.Request.URL.Path, "/api/") && c.Request.Method != "GET" {
+			if strings.HasPrefix(c.Request.URL.Path, "/api/") && !lo.Contains(excludeLogPaths, c.Request.URL.Path) {
 				result = false
 			}
-			contentType := c.Writer.Header().Get("Content-Type")
+			// contentType := c.Writer.Header().Get("Content-Type")
 			// log.Println("contentType", contentType)
-			if strings.Contains(contentType, "html") {
-				result = false
-			}
+
+			// if strings.Contains(contentType, "html") {
+			// 	result = false
+			// }
+
+			// log.Println("Skipper", c.Request.URL.Path, result)
 
 			return result
 		},
