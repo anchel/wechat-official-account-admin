@@ -88,6 +88,15 @@ func (wxapi *WxApi) PrepareResponse(res *resty.Response, checkErrcode bool) ([]b
 		}
 		if retobj.Errcode != 0 {
 			log.Println("PrepareResponse errcode:", retobj.Errcode, retobj.Errmsg)
+			if retobj.Errcode == 40001 || retobj.Errcode == 40014 {
+				retobj.Errmsg = fmt.Sprint("access_token 无效", "-", retobj.Errmsg)
+				_, err := wxapi.mpstore.Refresh(true)
+				if err != nil {
+					log.Println("PrepareResponse wxapi.mpstore.Refresh()", err.Error())
+					return nil, res, err
+				}
+			}
+
 			if retobj.Errcode == 48001 {
 				retobj.Errmsg = fmt.Sprint("api 功能未授权，请确认公众号已获得该接口权限", "-", retobj.Errmsg)
 			}
