@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"log"
-
+	"github.com/anchel/wechat-official-account-admin/lib/logger"
 	"github.com/anchel/wechat-official-account-admin/lib/types"
 	"github.com/anchel/wechat-official-account-admin/lib/utils"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
@@ -112,7 +111,7 @@ func (ctl *AppIDController) Select(c *gin.Context) {
 		return
 	}
 
-	log.Println("select appid", app.AppID)
+	logger.Info("select appid", "appid", app.AppID)
 	sessionAppidInfo := types.SessionAppidInfo{
 		AppType:        app.AppType,
 		Name:           app.Name,
@@ -125,7 +124,7 @@ func (ctl *AppIDController) Select(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Set("appid", sessionAppidInfo)
 	if err := session.Save(); err != nil {
-		log.Println("session save fail", err)
+		logger.Error("session save fail", "error", err.Error())
 		ctl.returnFail(c, 1, err.Error())
 		return
 	}

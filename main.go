@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"encoding/gob"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -40,7 +39,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := run()
 		if err != nil {
-			log.Println(err)
+			logger.Error(err.Error())
 			os.Exit(1)
 		}
 	},
@@ -57,21 +56,24 @@ func main() {
 var frontend embed.FS
 
 func run() error {
-	log.Println("starting run")
+	// 初始化日志
+	logger.SetDefault(logger.NewLogger(logger.NewTerminalHandlerWithLevel(os.Stderr, logger.LevelDebug, true)))
+
+	logger.Info("starting run")
 
 	if utils.CheckEnvFile() {
-		log.Println("loading .env file")
+		logger.Info("loading .env file")
 		err := godotenv.Load()
 		if err != nil {
-			log.Println("Error loading .env file")
+			logger.Error("Error loading .env file")
 			return err
 		}
 	}
 
-	log.Println("starting InitMongoDB")
+	logger.Info("starting InitMongoDB")
 	mongoClient, err := mongodb.InitMongoDB()
 	if err != nil {
-		log.Println("Error mongodb.InitMongoDB")
+		logger.Error("Error mongodb.InitMongoDB")
 		return err
 	}
 	// 定期检查mongo数据库健康状态
@@ -79,9 +81,9 @@ func run() error {
 		for {
 			time.Sleep(30 * time.Second)
 			if !mongoClient.HealthCheck(context.Background()) {
-				log.Println("Trying to reconnect to MongoDB...")
+				logger.Warn("Trying to reconnect to MongoDB...")
 				if err := mongoClient.Reconnect(context.Background()); err != nil {
-					log.Fatalf("Failed to reconnect to MongoDB: %v", err)
+					logger.Crit("Failed to reconnect to MongoDB", err.Error())
 				}
 			}
 		}
@@ -93,7 +95,7 @@ func run() error {
 	r := gin.New()
 	err = r.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
-		log.Println("Error r.SetTrustedProxies")
+		logger.Error("Error r.SetTrustedProxies")
 		return err
 	}
 	r.Use(gin.Logger())
@@ -108,9 +110,9 @@ func run() error {
 	})
 	defer zcore.Sync()
 
-	logger := zap.New(zcore)
+	loggerMongo := zap.New(zcore)
 
-	r.Use(ginzap.GinzapWithConfig(logger, &ginzap.Config{
+	r.Use(ginzap.GinzapWithConfig(loggerMongo, &ginzap.Config{
 		TimeFormat:   time.RFC3339,
 		UTC:          true,
 		DefaultLevel: zap.InfoLevel,
@@ -121,13 +123,13 @@ func run() error {
 				result = false
 			}
 			// contentType := c.Writer.Header().Get("Content-Type")
-			// log.Println("contentType", contentType)
+			// logger.Info("contentType", contentType)
 
 			// if strings.Contains(contentType, "html") {
 			// 	result = false
 			// }
 
-			// log.Println("Skipper", c.Request.URL.Path, result)
+			// logger.Info("Skipper", c.Request.URL.Path, result)
 
 			return result
 		},
@@ -145,11 +147,11 @@ func run() error {
 		}),
 	}))
 
-	r.Use(ginzap.RecoveryWithZap(logger, true))
+	r.Use(ginzap.RecoveryWithZap(loggerMongo, true))
 
 	store, err := redis.NewStore(3, "tcp", os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), []byte("secret666"))
 	if err != nil {
-		log.Println("Error redis.NewStore")
+		logger.Error("Error redis.NewStore")
 		return err
 	}
 	r.Use(sessions.Sessions("mysession", store))
@@ -158,7 +160,7 @@ func run() error {
 
 	exePath, err := os.Executable()
 	if err != nil {
-		log.Println("Error os.Executable")
+		logger.Error("Error os.Executable")
 		return err
 	}
 	wd := filepath.Dir(exePath)
@@ -167,7 +169,7 @@ func run() error {
 
 	// enable single page application
 	r.NoRoute(func(c *gin.Context) {
-		log.Println("NoRoute", c.Request.URL.Path)
+		logger.Info("NoRoute", "path", c.Request.URL.Path)
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.JSON(http.StatusOK, gin.H{
 				"code":    1,
@@ -195,20 +197,20 @@ func run() error {
 	group := r.Group("/api", func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path
 		if lo.Contains(excludeLoginPaths, path) {
-			// log.Println("check login path exclude", path)
+			// logger.Info("check login path exclude", path)
 			ctx.Next()
 		} else {
 			session := sessions.Default(ctx)
 			login, ok := session.Get("login").(int)
 			if !ok || login != 1 {
-				// log.Println("check login false")
+				// logger.Info("check login false")
 				ctx.JSON(http.StatusOK, gin.H{
 					"code":    1,
 					"message": "no login",
 				})
 				ctx.Abort()
 			} else {
-				// log.Println("check login success")
+				// logger.Info("check login success")
 				ctx.Next()
 			}
 		}
@@ -260,7 +262,7 @@ func run() error {
 
 	err = weixin.InitWeixin(rdb)
 	if err != nil {
-		log.Println("Error weixin.InitWeixin")
+		logger.Error("Error weixin.InitWeixin")
 		return err
 	}
 

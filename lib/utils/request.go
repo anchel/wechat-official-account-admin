@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"log"
 	"os"
 
+	"github.com/anchel/wechat-official-account-admin/lib/logger"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -14,7 +14,7 @@ func GetRestyClient() *resty.Client {
 		restyClient = resty.New()
 		wxProxy := os.Getenv("WA_PROXY")
 		if wxProxy != "" {
-			log.Println("GetHttpClient WA_PROXY:", wxProxy)
+			logger.Info("GetHttpClient", "WA_PROXY", wxProxy)
 			restyClient.SetProxy(wxProxy)
 		}
 	}

@@ -2,164 +2,134 @@ package logger
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"log"
-	"sync"
+	"log/slog"
+	"math"
+	"os"
+	"runtime"
 	"time"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
-type GetCollectionFunc func() (*mongo.Collection, error)
+const errorKey = "LOG_ERROR"
 
-type MongoZapCore[T any] struct {
-	// level   zapcore.Level
-	// encoder zapcore.Encoder
+const (
+	levelMaxVerbosity slog.Level = math.MinInt
 
-	buffer     []T
-	bufferLock sync.Mutex
-	bufferChan chan struct{}
+	LevelTrace slog.Level = -8
+	LevelDebug            = slog.LevelDebug
+	LevelInfo             = slog.LevelInfo
+	LevelWarn             = slog.LevelWarn
+	LevelError            = slog.LevelError
+	LevelCrit  slog.Level = 12
+)
 
-	maxBatchSize  int
-	flushInterval time.Duration
+type Logger interface {
+	// With returns a new Logger that has this logger's attributes plus the given attributes
+	With(ctx ...interface{}) Logger
 
-	GetCollection GetCollectionFunc
+	// New returns a new Logger that has this logger's attributes plus the given attributes. Identical to 'With'.
+	New(ctx ...interface{}) Logger
+
+	// Log logs a message at the specified level with context key/value pairs
+	Log(level slog.Level, msg string, ctx ...interface{})
+
+	// Trace log a message at the trace level with context key/value pairs
+	Trace(msg string, ctx ...interface{})
+
+	// Debug logs a message at the debug level with context key/value pairs
+	Debug(msg string, ctx ...interface{})
+
+	// Info logs a message at the info level with context key/value pairs
+	Info(msg string, ctx ...interface{})
+
+	// Warn logs a message at the warn level with context key/value pairs
+	Warn(msg string, ctx ...interface{})
+
+	// Error logs a message at the error level with context key/value pairs
+	Error(msg string, ctx ...interface{})
+
+	// Crit logs a message at the crit level with context key/value pairs, and exits
+	Crit(msg string, ctx ...interface{})
+
+	// Write logs a message at the specified level
+	Write(level slog.Level, msg string, attrs ...any)
+
+	// Enabled reports whether l emits log records at the given context and level.
+	Enabled(ctx context.Context, level slog.Level) bool
+
+	// Handler returns the underlying handler of the inner logger.
+	Handler() slog.Handler
 }
 
-// func (core *MongoZapCore[T]) With(fields []zap.Field) zapcore.Core {
-// 	return core
-// }
-
-// func (core *MongoZapCore[T]) Enabled(level zapcore.Level) bool {
-// 	return level >= core.level
-// }
-
-// func (core *MongoZapCore[T]) Check(entry zapcore.Entry, checked *zapcore.CheckedEntry) *zapcore.CheckedEntry {
-// 	if core.Enabled(entry.Level) {
-// 		return checked.AddCore(entry, core)
-// 	}
-// 	return checked
-// }
-
-// func (core *MongoZapCore[T]) Write(entry zapcore.Entry, fields []zapcore.Field) error {
-// 	// log.Println("MongoZapCore Write", entry, fields)
-
-// 	buf, err := core.encoder.EncodeEntry(entry, fields)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	var logInfo T
-// 	err = json.Unmarshal(buf.Bytes(), &logInfo)
-// 	if err != nil {
-// 		log.Println("MongoZapCore Write json.Unmarshal error", err)
-// 		return err
-// 	}
-
-// 	core.bufferLock.Lock()
-// 	core.buffer = append(core.buffer, logInfo)
-// 	if len(core.buffer) >= core.maxBatchSize {
-// 		core.triggerFlush()
-// 	}
-// 	core.bufferLock.Unlock()
-
-//		return nil
-//	}
-func (core *MongoZapCore[T]) Write(bs []byte) (int, error) {
-
-	var logInfo T
-	err := json.Unmarshal(bs, &logInfo)
-	if err != nil {
-		log.Println("MongoZapCore Write json.Unmarshal error", err)
-		return 0, err
-	}
-
-	core.bufferLock.Lock()
-	core.buffer = append(core.buffer, logInfo)
-	if len(core.buffer) >= core.maxBatchSize {
-		core.triggerFlush()
-	}
-	core.bufferLock.Unlock()
-
-	return len(bs), nil
+type logger struct {
+	inner *slog.Logger
 }
 
-func (core *MongoZapCore[T]) flushBufferPeriodically() {
-	for {
-		select {
-		case <-core.bufferChan:
-			core.flushBuffer()
-		case <-time.After(core.flushInterval):
-			core.flushBuffer()
-		}
+// NewLogger returns a logger with the specified handler set
+func NewLogger(h slog.Handler) Logger {
+	return &logger{
+		slog.New(h),
 	}
 }
 
-func (core *MongoZapCore[T]) flushBuffer() error {
-	core.bufferLock.Lock()
-	defer core.bufferLock.Unlock()
-
-	// log.Println("flushBuffer")
-
-	if len(core.buffer) == 0 {
-		return nil
-	}
-
-	if core.GetCollection == nil {
-		log.Println("MongoZapCore GetCollection is nil")
-		return errors.New("GetCollection is nil")
-	}
-
-	collection, err := core.GetCollection()
-	if err != nil {
-		log.Println("MongoZapCore GetCollection error", err)
-		return err
-	}
-
-	docs := make([]interface{}, len(core.buffer))
-	for i, v := range core.buffer {
-		docs[i] = v
-	}
-	_, err = collection.InsertMany(context.Background(), docs)
-	if err != nil {
-		log.Println("MongoZapCore InsertMany error", err)
-		return err
-	}
-
-	core.buffer = core.buffer[:0] // 复用 buffer
-	return nil
+func (l *logger) Handler() slog.Handler {
+	return l.inner.Handler()
 }
 
-func (core *MongoZapCore[T]) Sync() error {
-	log.Println("MongoZapCore Sync")
-	return core.flushBuffer()
-}
-
-func (core *MongoZapCore[T]) triggerFlush() {
-	// log.Println("triggerFlush")
-	select {
-	case core.bufferChan <- struct{}{}:
-	default:
-		log.Println("bufferChan is full")
-	}
-}
-
-func NewMongoZapCore[T any](level zapcore.Level, gcf GetCollectionFunc) zapcore.Core {
-	mzc := &MongoZapCore[T]{
-		buffer:        make([]T, 0, 5),
-		bufferLock:    sync.Mutex{},
-		bufferChan:    make(chan struct{}, 1),
-		maxBatchSize:  5,
-		flushInterval: 5 * time.Second,
-		GetCollection: gcf,
+// Write logs a message at the specified level.
+func (l *logger) Write(level slog.Level, msg string, attrs ...any) {
+	if !l.inner.Enabled(context.Background(), level) {
+		return
 	}
 
-	go mzc.flushBufferPeriodically()
+	var pcs [1]uintptr
+	runtime.Callers(3, pcs[:])
 
-	c := zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(mzc), level)
+	if len(attrs)%2 != 0 {
+		attrs = append(attrs, nil, errorKey, "Normalized odd number of arguments by adding nil")
+	}
+	r := slog.NewRecord(time.Now(), level, msg, pcs[0])
+	r.Add(attrs...)
+	l.inner.Handler().Handle(context.Background(), r)
+}
 
-	return c
+func (l *logger) Log(level slog.Level, msg string, attrs ...any) {
+	l.Write(level, msg, attrs...)
+}
+
+func (l *logger) With(ctx ...interface{}) Logger {
+	return &logger{l.inner.With(ctx...)}
+}
+
+func (l *logger) New(ctx ...interface{}) Logger {
+	return l.With(ctx...)
+}
+
+// Enabled reports whether l emits log records at the given context and level.
+func (l *logger) Enabled(ctx context.Context, level slog.Level) bool {
+	return l.inner.Enabled(ctx, level)
+}
+
+func (l *logger) Trace(msg string, ctx ...interface{}) {
+	l.Write(LevelTrace, msg, ctx...)
+}
+
+func (l *logger) Debug(msg string, ctx ...interface{}) {
+	l.Write(slog.LevelDebug, msg, ctx...)
+}
+
+func (l *logger) Info(msg string, ctx ...interface{}) {
+	l.Write(slog.LevelInfo, msg, ctx...)
+}
+
+func (l *logger) Warn(msg string, ctx ...any) {
+	l.Write(slog.LevelWarn, msg, ctx...)
+}
+
+func (l *logger) Error(msg string, ctx ...interface{}) {
+	l.Write(slog.LevelError, msg, ctx...)
+}
+
+func (l *logger) Crit(msg string, ctx ...interface{}) {
+	l.Write(LevelCrit, msg, ctx...)
+	os.Exit(1)
 }
