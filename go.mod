@@ -13,10 +13,13 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.6.2
 	github.com/samber/lo v1.46.0
+	github.com/segmentio/kafka-go v0.4.47
 	github.com/spf13/cobra v1.8.1
 	go.mongodb.org/mongo-driver v1.14.0
 	go.uber.org/zap v1.27.0
 )
+
+require github.com/pierrec/lz4/v4 v4.1.15 // indirect
 
 require (
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff // indirect

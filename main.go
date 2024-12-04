@@ -22,12 +22,12 @@ import (
 	"github.com/gin-contrib/static"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"github.com/segmentio/kafka-go"
 
 	"github.com/joho/godotenv"
 	redislib "github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -100,17 +100,34 @@ func run() error {
 	}
 	r.Use(gin.Logger())
 
+	// kafka
+	kafkaBrokers := strings.Split(os.Getenv("KAFKA_BROKERS"), ",")
+	kafkaTopic := os.Getenv("KAFKA_TOPIC")
+	logger.Info("kafkaBrokers", "brokers", kafkaBrokers)
+	logger.Info("kafkaTopic", "topic", kafkaTopic)
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers:  kafkaBrokers,
+		Topic:    kafkaTopic,
+		Balancer: &kafka.LeastBytes{},
+	})
+	defer writer.Close()
+
+	kcore := logger.NewKafkaZapCore[types.GinRequestLogInfo](zap.DebugLevel, writer)
+	defer kcore.Sync()
+
 	excludeLogPaths := []string{
 		"/api/system/user/userinfo",
 		"/api/appid/session_info",
 		"/api/request-log/list",
 	}
-	zcore := logger.NewMongoZapCore[types.GinRequestLogInfo](zap.DebugLevel, func() (*mongo.Collection, error) {
-		return mongoClient.GetCollection("request-logs")
-	})
-	defer zcore.Sync()
+	// zcore := logger.NewMongoZapCore[types.GinRequestLogInfo](zap.DebugLevel, func() (*mongo.Collection, error) {
+	// 	return mongoClient.GetCollection("request-logs")
+	// })
+	// defer zcore.Sync()
 
-	loggerMongo := zap.New(zcore)
+	// loggerMongo := zap.New(zcore)
+
+	loggerMongo := zap.New(kcore)
 
 	r.Use(ginzap.GinzapWithConfig(loggerMongo, &ginzap.Config{
 		TimeFormat:   time.RFC3339,
