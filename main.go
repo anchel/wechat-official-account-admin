@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"embed"
 	"encoding/gob"
 	"net/http"
@@ -105,10 +106,16 @@ func run() error {
 	kafkaTopic := os.Getenv("KAFKA_TOPIC")
 	logger.Info("kafkaBrokers", "brokers", kafkaBrokers)
 	logger.Info("kafkaTopic", "topic", kafkaTopic)
+	dialer := &kafka.Dialer{
+		Timeout:   10 * time.Second,
+		DualStack: true,
+		TLS:       &tls.Config{},
+	}
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:  kafkaBrokers,
 		Topic:    kafkaTopic,
 		Balancer: &kafka.LeastBytes{},
+		Dialer:   dialer,
 	})
 	defer writer.Close()
 
