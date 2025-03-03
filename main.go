@@ -93,6 +93,7 @@ func run() error {
 	// 优雅退出
 	defer mongoClient.Disconnect(context.Background())
 
+	// create gin instance
 	r := gin.New()
 	err = r.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
@@ -146,14 +147,6 @@ func run() error {
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") && !lo.Contains(excludeLogPaths, c.Request.URL.Path) {
 				result = false
 			}
-			// contentType := c.Writer.Header().Get("Content-Type")
-			// logger.Info("contentType", contentType)
-
-			// if strings.Contains(contentType, "html") {
-			// 	result = false
-			// }
-
-			// logger.Info("Skipper", c.Request.URL.Path, result)
 
 			return result
 		},
@@ -171,8 +164,10 @@ func run() error {
 		}),
 	}))
 
+	// store request logs in mongodb
 	r.Use(ginzap.RecoveryWithZap(loggerMongo, true))
 
+	// enable session
 	store, err := redis.NewStore(3, "tcp", os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), []byte("secret666"))
 	if err != nil {
 		logger.Error("Error redis.NewStore")
@@ -180,6 +175,7 @@ func run() error {
 	}
 	r.Use(sessions.Sessions("mysession", store))
 
+	// serve frontend assets, such as html,css,image and so on
 	r.Use(static.Serve("/", static.EmbedFolder(frontend, "wechat-official-account-admin-fe/dist")))
 
 	exePath, err := os.Executable()
@@ -218,6 +214,8 @@ func run() error {
 		"/api/system/user/userinfo",
 	}
 
+	// check login status
+	// check whether the apis that must work with the official account carries the appid
 	group := r.Group("/api", func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path
 		if lo.Contains(excludeLoginPaths, path) {
@@ -277,6 +275,7 @@ func run() error {
 	})
 	routes.InitRoutes(group)
 
+	// for common redis operation
 	rdb := redislib.NewClient(&redislib.Options{
 		Addr:     os.Getenv("REDIS_ADDR"),
 		Password: os.Getenv("REDIS_PASSWORD"),
@@ -284,6 +283,7 @@ func run() error {
 
 	gob.Register(types.SessionAppidInfo{})
 
+	// init weixin module
 	err = weixin.InitWeixin(rdb)
 	if err != nil {
 		logger.Error("Error weixin.InitWeixin")
@@ -294,5 +294,6 @@ func run() error {
 	wxmp.GET("/:appid/handler", weixin.Serve)
 	wxmp.POST("/:appid/handler", weixin.Serve)
 
+	// server start listening
 	return r.Run(os.Getenv("LISTEN_ADDR"))
 }
