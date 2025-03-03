@@ -136,6 +136,9 @@ func (ctl *AppIDController) Select(c *gin.Context) {
 func (ctl *AppIDController) SessionInfo(c *gin.Context) {
 	session := sessions.Default(c)
 	app, ok := session.Get("appid").(types.SessionAppidInfo)
+	app.AppSecret = ""
+	app.Token = ""
+	app.EncodingAESKey = ""
 	if ok {
 		ctl.returnOk(c, gin.H{"appidInfo": app})
 	} else {
