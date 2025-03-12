@@ -252,10 +252,25 @@ func run() error {
 	routes.InitRoutes(group)
 
 	// for common redis operation
-	rdb := redislib.NewClient(&redislib.Options{
-		Addr:     os.Getenv("REDIS_ADDR"),
-		Password: os.Getenv("REDIS_PASSWORD"),
-	})
+	var rdb *redislib.Client
+
+	redisSentinelAddr := os.Getenv("REDIS_SENTINEL_ADDR")
+	if redisSentinelAddr != "" {
+		masterName := os.Getenv("REDIS_SENTINEL_MASTERNAME")
+		if masterName == "" {
+			masterName = "mymaster"
+		}
+		rdb = redislib.NewFailoverClient(&redislib.FailoverOptions{
+			MasterName:    masterName,
+			SentinelAddrs: strings.Split(redisSentinelAddr, ","),
+			Password:      os.Getenv("REDIS_PASSWORD"),
+		})
+	} else {
+		rdb = redislib.NewClient(&redislib.Options{
+			Addr:     os.Getenv("REDIS_ADDR"),
+			Password: os.Getenv("REDIS_PASSWORD"),
+		})
+	}
 
 	gob.Register(types.SessionAppidInfo{})
 
