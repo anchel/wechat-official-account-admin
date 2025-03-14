@@ -485,6 +485,17 @@ func (ctl *MenuController) deleteNormal(c *gin.Context) {
 		return
 	}
 
+	// 检查当前登录用户是否有管理员权限
+	isAdmin, err := ctl.checkIsAdmin(c)
+	if err != nil {
+		ctl.returnFail(c, 1, err.Error())
+		return
+	}
+	if !isAdmin {
+		ctl.returnFail(c, 1, "no permission")
+		return
+	}
+
 	// 删除微信侧的菜单
 	wxApiClient, err := weixin.GetWxApiClient(ctx, appid)
 	if ctl.checkError(c, err) != nil {

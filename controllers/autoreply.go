@@ -211,6 +211,17 @@ func (ctl *AutoReplyController) Delete(c *gin.Context) {
 		return
 	}
 
+	// 检查当前登录用户是否有管理员权限
+	isAdmin, err := ctl.checkIsAdmin(c)
+	if err != nil {
+		ctl.returnFail(c, 1, err.Error())
+		return
+	}
+	if !isAdmin {
+		ctl.returnFail(c, 1, "no permission")
+		return
+	}
+
 	ret, err := mongodb.ModelWeixinAutoReply.DeleteByID(c, id)
 	if err != nil {
 		ctl.returnFail(c, 500, err.Error())

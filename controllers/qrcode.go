@@ -97,8 +97,20 @@ func (ctl *QrcodeController) Create(c *gin.Context) {
 		return
 	}
 
-	var ret *wxapi.CreateQrCodeResp
 	var err error
+
+	// 检查当前登录用户是否有管理员权限
+	isAdmin, err := ctl.checkIsAdmin(c)
+	if err != nil {
+		ctl.returnFail(c, 1, err.Error())
+		return
+	}
+	if !isAdmin {
+		ctl.returnFail(c, 1, "no permission")
+		return
+	}
+
+	var ret *wxapi.CreateQrCodeResp
 
 	ctx, appid, err := ctl.newContext(c)
 	if err != nil {
