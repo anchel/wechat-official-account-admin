@@ -110,7 +110,9 @@ func run() error {
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
 		DualStack: true,
-		TLS:       &tls.Config{},
+		TLS: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 	}
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:  kafkaBrokers,
