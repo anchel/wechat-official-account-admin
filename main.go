@@ -197,14 +197,14 @@ func run() error {
 			})
 			return
 		}
-		accept := c.Request.Header.Get("Accept")
-		if !strings.Contains(accept, "html") {
-			c.JSON(http.StatusOK, gin.H{
-				"code":    1,
-				"message": "not html",
-			})
-			return
-		}
+		// accept := c.Request.Header.Get("Accept")
+		// if !strings.Contains(accept, "html") {
+		// 	c.JSON(http.StatusOK, gin.H{
+		// 		"code":    1,
+		// 		"message": "not html",
+		// 	})
+		// 	return
+		// }
 		c.FileFromFS("/wechat-official-account-admin-fe/dist/template.html", http.FS(frontend))
 	})
 
