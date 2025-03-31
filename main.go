@@ -144,6 +144,7 @@ func run() error {
 		UTC:          true,
 		DefaultLevel: zap.InfoLevel,
 		Skipper: func(c *gin.Context) bool {
+			logger.Info("ginzap Skipper", "headers", c.Request.Header)
 			result := true
 
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") && !lo.Contains(excludeLogPaths, c.Request.URL.Path) {
