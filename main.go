@@ -94,11 +94,11 @@ func run() error {
 
 	// create gin instance
 	r := gin.New()
-	err = r.SetTrustedProxies([]string{"127.0.0.1"})
-	if err != nil {
-		logger.Error("Error r.SetTrustedProxies")
-		return err
-	}
+	// err = r.SetTrustedProxies([]string{"127.0.0.1"})
+	// if err != nil {
+	// 	logger.Error("Error r.SetTrustedProxies")
+	// 	return err
+	// }
 	r.Use(gin.Logger())
 
 	excludeLogPaths := []string{
