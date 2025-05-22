@@ -9,7 +9,7 @@
 账号密码：guest/guest
 
 效果图：
-![173130945135422](https://wechat.anchel.cn/files/upload-image/upload-6735ef232b22bae98b20cfd7.jpeg)
+![173130945135422](https://www.anchel.cn/images/wechat/upload-6735ef232b22bae98b20cfd7.jpeg)
 
 ## **已实现功能**
 
@@ -75,11 +75,11 @@
 1. 去微信公众号官方后台 [官方后台](https://mp.weixin.qq.com/) 获取 AppID、AppSecret、Token、EncodingAESKey
 2. 在该系统的公众号管理页面，添加公众号
 
-   ![1731309451354](https://wechat.anchel.cn/files/upload-image/upload-6735ba422b22bae98b20cfd5.png)
+   ![1731309451354](https://www.anchel.cn/images/wechat/upload-6735ba422b22bae98b20cfd5.png)
 
 3. 添加完成之后，查看详情界面可以看到配置地址，这个地址需要配置在微信公众号官方后台。
 
-   ![1731309337778](https://wechat.anchel.cn/files/upload-image/upload-6735ba622b22bae98b20cfd6.png)
+   ![1731309337778](https://www.anchel.cn/images/wechat/upload-6735ba622b22bae98b20cfd6.png)
 
    另外，微信官方会对请求来源 ip 做限制。需要把页面上显示的公网 ip，配置在微信官方的 ip 白名单里面
 
