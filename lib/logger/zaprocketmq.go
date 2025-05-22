@@ -3,11 +3,11 @@ package logger
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/charmbracelet/log"
-	"github.com/spf13/viper"
 
 	"github.com/apache/rocketmq-clients/golang/v5"
 	"go.uber.org/zap"
@@ -82,7 +82,7 @@ func (core *RocketZapCore[T]) flushBuffer() error {
 		// set keys and tag
 		// msg.SetKeys(fmt.Sprintf("%d", req.UserID), req.OrderID)
 
-		msg.SetTag(viper.GetString("RMQ_MESSAGE_TAG"))
+		msg.SetTag(os.Getenv("RMQ_MESSAGE_TAG"))
 
 		// send message in sync
 		resps, err := core.writer.Send(context.Background(), msg)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/apache/rocketmq-clients/golang/v5"
 	"github.com/apache/rocketmq-clients/golang/v5/credentials"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -19,11 +18,11 @@ var (
 )
 
 func InitRocketMQ() {
-	Endpoint = viper.GetString("RMQ_ENDPOINT")
-	NameSpace = viper.GetString("RMQ_NAMESPACE")
+	Endpoint = os.Getenv("RMQ_ENDPOINT")
+	NameSpace = os.Getenv("RMQ_NAMESPACE")
 
-	AccessKey = viper.GetString("RMQ_ACCESS_KEY")
-	SecretKey = viper.GetString("RMQ_SECRET_KEY")
+	AccessKey = os.Getenv("RMQ_ACCESS_KEY")
+	SecretKey = os.Getenv("RMQ_SECRET_KEY")
 
 	// log.Info("rocketmq config", "endpoint", Endpoint, "namespace", NameSpace, "topic", Topic, "groupName", GroupName, "accesskey", AccessKey, "secretkey", SecretKey)
 
