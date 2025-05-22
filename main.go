@@ -17,6 +17,7 @@ import (
 	"github.com/anchel/wechat-official-account-admin/modules/weixin"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/anchel/wechat-official-account-admin/routes"
+	"github.com/charmbracelet/log"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-contrib/static"
@@ -27,6 +28,7 @@ import (
 	redislib "github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -56,6 +58,14 @@ func main() {
 var frontend embed.FS
 
 func run() error {
+	viper.SetConfigFile(".env")
+	viper.AddConfigPath(".")    // optionally look for config in the working directory
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		log.Error("Fatal error config file", "err", err)
+		return err
+	}
+
 	// 初始化日志
 	logger.SetDefault(logger.NewLogger(logger.NewTerminalHandlerWithLevel(os.Stderr, logger.LevelDebug, true)))
 
