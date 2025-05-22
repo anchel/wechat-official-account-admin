@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"embed"
 	"encoding/gob"
 	"net/http"
@@ -15,20 +14,22 @@ import (
 	"github.com/anchel/wechat-official-account-admin/lib/logger"
 	"github.com/anchel/wechat-official-account-admin/lib/types"
 	"github.com/anchel/wechat-official-account-admin/lib/utils"
+	"github.com/anchel/wechat-official-account-admin/modules/rocketmq"
 	"github.com/anchel/wechat-official-account-admin/modules/weixin"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/anchel/wechat-official-account-admin/routes"
+	"github.com/charmbracelet/log"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-contrib/static"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
-	"github.com/segmentio/kafka-go"
 
 	"github.com/joho/godotenv"
 	redislib "github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -57,6 +58,14 @@ func main() {
 var frontend embed.FS
 
 func run() error {
+	viper.SetConfigFile(".env")
+	viper.AddConfigPath(".")    // optionally look for config in the working directory
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		log.Error("Fatal error config file", "err", err)
+		return err
+	}
+
 	// 初始化日志
 	logger.SetDefault(logger.NewLogger(logger.NewTerminalHandlerWithLevel(os.Stderr, logger.LevelDebug, true)))
 
@@ -103,27 +112,43 @@ func run() error {
 	r.Use(gin.Logger())
 
 	// kafka
-	kafkaBrokers := strings.Split(os.Getenv("KAFKA_BROKERS"), ",")
-	kafkaTopic := os.Getenv("KAFKA_TOPIC")
-	logger.Info("kafkaBrokers", "brokers", kafkaBrokers)
-	logger.Info("kafkaTopic", "topic", kafkaTopic)
-	dialer := &kafka.Dialer{
-		Timeout:   10 * time.Second,
-		DualStack: true,
-		TLS: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  kafkaBrokers,
-		Topic:    kafkaTopic,
-		Balancer: &kafka.LeastBytes{},
-		Dialer:   dialer,
-	})
-	defer writer.Close()
+	// kafkaBrokers := strings.Split(os.Getenv("KAFKA_BROKERS"), ",")
+	// kafkaTopic := os.Getenv("KAFKA_TOPIC")
+	// logger.Info("kafkaBrokers", "brokers", kafkaBrokers)
+	// logger.Info("kafkaTopic", "topic", kafkaTopic)
+	// dialer := &kafka.Dialer{
+	// 	Timeout:   10 * time.Second,
+	// 	DualStack: true,
+	// 	TLS: &tls.Config{
+	// 		InsecureSkipVerify: true,
+	// 	},
+	// }
+	// writer := kafka.NewWriter(kafka.WriterConfig{
+	// 	Brokers:  kafkaBrokers,
+	// 	Topic:    kafkaTopic,
+	// 	Balancer: &kafka.LeastBytes{},
+	// 	Dialer:   dialer,
+	// })
+	// defer writer.Close()
 
-	kcore := logger.NewKafkaZapCore[types.GinRequestLogInfo](zap.DebugLevel, writer)
-	defer kcore.Sync()
+	// kcore := logger.NewKafkaZapCore[types.GinRequestLogInfo](zap.DebugLevel, writer)
+	// defer kcore.Sync()
+
+	// init rocketmq
+	rocketmq.InitRocketMQ()
+	producer, err := rocketmq.NewProducer(viper.GetString("RMQ_TOPIC"))
+	if err != nil {
+		return err
+	}
+	err = producer.Start()
+	if err != nil {
+		logger.Error("Error producer.Start")
+		return err
+	}
+	defer producer.GracefulStop()
+
+	rcore := logger.NewRocketMQZapCore[types.GinRequestLogInfo](zap.DebugLevel, viper.GetString("RMQ_TOPIC"), producer)
+	defer rcore.Sync()
 
 	excludeLogPaths := []string{
 		"/api/system/user/userinfo",
@@ -137,7 +162,7 @@ func run() error {
 
 	// loggerMongo := zap.New(zcore)
 
-	loggerMongo := zap.New(kcore)
+	loggerMongo := zap.New(rcore)
 
 	r.Use(ginzap.GinzapWithConfig(loggerMongo, &ginzap.Config{
 		TimeFormat:   time.RFC3339,

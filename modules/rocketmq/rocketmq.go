@@ -21,7 +21,6 @@ var (
 func InitRocketMQ() {
 	Endpoint = viper.GetString("RMQ_ENDPOINT")
 	NameSpace = viper.GetString("RMQ_NAMESPACE")
-	// Topic = viper.GetString("RMQ_TOPIC")
 
 	AccessKey = viper.GetString("RMQ_ACCESS_KEY")
 	SecretKey = viper.GetString("RMQ_SECRET_KEY")

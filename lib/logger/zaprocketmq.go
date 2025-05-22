@@ -26,6 +26,7 @@ type RocketZapCore[T any] struct {
 }
 
 func (core *RocketZapCore[T]) Write(bs []byte) (int, error) {
+	log.Info("RocketZapCore Write", "bs", string(bs))
 
 	var logInfo T
 	err := json.Unmarshal(bs, &logInfo)
@@ -59,32 +60,11 @@ func (core *RocketZapCore[T]) flushBuffer() error {
 	core.bufferLock.Lock()
 	defer core.bufferLock.Unlock()
 
-	// log.Println("flushBuffer", len(core.buffer))
+	log.Info("flushBuffer", "len", len(core.buffer))
 
 	if len(core.buffer) == 0 {
 		return nil
 	}
-
-	// if core.GetCollection == nil {
-	// 	log.Println("RocketZapCore GetCollection is nil")
-	// 	return errors.New("GetCollection is nil")
-	// }
-
-	// collection, err := core.GetCollection()
-	// if err != nil {
-	// 	log.Println("RocketZapCore GetCollection error", err)
-	// 	return err
-	// }
-
-	// docs := make([]interface{}, len(core.buffer))
-	// for i, v := range core.buffer {
-	// 	docs[i] = v
-	// }
-	// _, err = collection.InsertMany(context.Background(), docs)
-	// if err != nil {
-	// 	log.Println("RocketZapCore InsertMany error", err)
-	// 	return err
-	// }
 
 	// messages := make([]kafka.Message, len(core.buffer))
 	for _, v := range core.buffer {
