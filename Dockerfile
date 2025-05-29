@@ -17,7 +17,7 @@ COPY . /app/
 
 RUN tree .
 
-RUN make fe
+# RUN make fe
 
 # 执行代码编译命令。操作系统参数为linux，编译后的二进制产物命名为woaa，并存放在当前目录下。
 RUN go build -o woaa .
