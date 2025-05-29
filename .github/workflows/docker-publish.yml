@@ -35,7 +35,7 @@ jobs:
           # target: "/woaa/"
 
           # Minio endpoint of object storage host
-          endpoint: "http://cos.anchel.cn/"
+          endpoint: ${{ secrets.MINIO_ENDPOINT }}
           # Minio access key (username)
           access_key: ${{ secrets.MINIO_ACCESS_KEY }}
           # Minio secret key (password)
