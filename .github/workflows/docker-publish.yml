@@ -3,7 +3,7 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - feat/anchel  # 替换为你希望触发的分支名
+      - feat/anchel # 替换为你希望触发的分支名
 
 jobs:
   build:
@@ -14,6 +14,25 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: "recursive"
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 构建前端
+      - run: make fe
+
+      # 上传前端构建产物到cos
+      - name: Minio Deploy
+        uses: mamal72/minio-perfect-deploy-action@main
+        with:
+          endpoint: ${{ secrets.MINIO_ENDPOINT }}
+          access_key: ${{ secrets.MINIO_ACCESS_KEY }}
+          secret_key: ${{ secrets.MINIO_SECRET_KEY }}
+          bucket: "web"
+          source_dir: "wechat-official-account-admin-fe/dist"
+          target_dir: "/woaa/"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
