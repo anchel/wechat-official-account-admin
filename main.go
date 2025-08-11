@@ -14,7 +14,6 @@ import (
 	"github.com/anchel/wechat-official-account-admin/lib/logger"
 	"github.com/anchel/wechat-official-account-admin/lib/types"
 	"github.com/anchel/wechat-official-account-admin/lib/utils"
-	"github.com/anchel/wechat-official-account-admin/modules/rocketmq"
 	"github.com/anchel/wechat-official-account-admin/modules/weixin"
 	"github.com/anchel/wechat-official-account-admin/mongodb"
 	"github.com/anchel/wechat-official-account-admin/routes"
@@ -28,7 +27,7 @@ import (
 	redislib "github.com/redis/go-redis/v9"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
-
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -103,65 +102,23 @@ func run() error {
 	// }
 	r.Use(gin.Logger())
 
-	// kafka
-	// kafkaBrokers := strings.Split(os.Getenv("KAFKA_BROKERS"), ",")
-	// kafkaTopic := os.Getenv("KAFKA_TOPIC")
-	// logger.Info("kafkaBrokers", "brokers", kafkaBrokers)
-	// logger.Info("kafkaTopic", "topic", kafkaTopic)
-	// dialer := &kafka.Dialer{
-	// 	Timeout:   10 * time.Second,
-	// 	DualStack: true,
-	// 	TLS: &tls.Config{
-	// 		InsecureSkipVerify: true,
-	// 	},
-	// }
-	// writer := kafka.NewWriter(kafka.WriterConfig{
-	// 	Brokers:  kafkaBrokers,
-	// 	Topic:    kafkaTopic,
-	// 	Balancer: &kafka.LeastBytes{},
-	// 	Dialer:   dialer,
-	// })
-	// defer writer.Close()
-
-	// kcore := logger.NewKafkaZapCore[types.GinRequestLogInfo](zap.DebugLevel, writer)
-	// defer kcore.Sync()
-
-	// init rocketmq
-	rocketmq.InitRocketMQ()
-	producer, err := rocketmq.NewProducer(os.Getenv("RMQ_TOPIC"))
-	if err != nil {
-		return err
-	}
-	err = producer.Start()
-	if err != nil {
-		logger.Error("Error producer.Start")
-		return err
-	}
-	defer producer.GracefulStop()
-
-	rcore := logger.NewRocketMQZapCore[types.GinRequestLogInfo](zap.DebugLevel, os.Getenv("RMQ_TOPIC"), producer)
-	defer rcore.Sync()
-
 	excludeLogPaths := []string{
 		"/api/system/user/userinfo",
 		"/api/appid/session_info",
 		"/api/request-log/list",
 	}
-	// zcore := logger.NewMongoZapCore[types.GinRequestLogInfo](zap.DebugLevel, func() (*mongo.Collection, error) {
-	// 	return mongoClient.GetCollection("request-logs")
-	// })
-	// defer zcore.Sync()
+	zcore := logger.NewMongoZapCore[types.GinRequestLogInfo](zap.DebugLevel, func() (*mongo.Collection, error) {
+		return mongoClient.GetCollection("request-logs")
+	})
+	defer zcore.Sync()
 
-	// loggerMongo := zap.New(zcore)
-
-	loggerMongo := zap.New(rcore)
+	loggerMongo := zap.New(zcore)
 
 	r.Use(ginzap.GinzapWithConfig(loggerMongo, &ginzap.Config{
 		TimeFormat:   time.RFC3339,
 		UTC:          true,
 		DefaultLevel: zap.InfoLevel,
 		Skipper: func(c *gin.Context) bool {
-			logger.Info("ginzap Skipper", "headers", c.Request.Header)
 			result := true
 
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") && !lo.Contains(excludeLogPaths, c.Request.URL.Path) {
@@ -217,14 +174,14 @@ func run() error {
 			})
 			return
 		}
-		// accept := c.Request.Header.Get("Accept")
-		// if !strings.Contains(accept, "html") {
-		// 	c.JSON(http.StatusOK, gin.H{
-		// 		"code":    1,
-		// 		"message": "not html",
-		// 	})
-		// 	return
-		// }
+		accept := c.Request.Header.Get("Accept")
+		if !strings.Contains(accept, "html") {
+			c.JSON(http.StatusOK, gin.H{
+				"code":    1,
+				"message": "not html",
+			})
+			return
+		}
 		c.FileFromFS("/wechat-official-account-admin-fe/dist/template.html", http.FS(frontend))
 	})
 
